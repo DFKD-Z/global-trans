@@ -1,29 +1,34 @@
 "use client"
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { GalleryVerticalEnd } from "lucide-react"
 import { LoginForm } from "@/components/login-form"
 import { useAuth } from "@/app/provider/AuthProvider"
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-
-  // 如果已登录，重定向到首页
+  // 如果已登录，重定向到项目管理界面
   useEffect(() => {
     if (!loading && user) {
+      // 使用 window.location.href 进行完整页面跳转，确保 cookie 被正确携带
       router.push("/");
     }
-  }, [user, loading, router]);
+  }, [user, loading]);
 
-  // 加载中或已登录时不显示登录表单
-  if (loading || user) {
+  // 加载中时显示加载状态
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-muted-foreground">加载中...</div>
       </div>
     );
+  }
+
+  // 已登录时，等待重定向（不显示内容）
+  if (user) {
+    return null;
   }
 
   return (

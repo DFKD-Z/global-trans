@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 /**
@@ -57,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const login = useCallback((userData: User) => {
     setUser(userData);
+    setLoading(false);
   }, []);
 
   /**
@@ -77,8 +78,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
+  // 使用 useMemo 缓存 value 对象，避免不必要的重新渲染
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      logout,
+      checkAuth,
+    }),
+    [user, loading, login, logout, checkAuth]
+  );
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

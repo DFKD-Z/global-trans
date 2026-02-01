@@ -4,7 +4,7 @@
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getTokenFromCookies, verifyToken } from "@/app/services/common/jwt";
+import { getTokenFromCookies, verifyTokenEdge } from "@/app/services/common/jwt";
 
 // 需要保护的路由路径（匹配规则）
 const protectedPaths = ["/", "/project"];
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
 
   // 获取 Token
   const token = getTokenFromCookies(request.cookies);
-
+  
   // 如果没有 Token，重定向到登录页
   if (!token) {
     const loginUrl = new URL("/login", request.url);
@@ -49,9 +49,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 验证 Token
-  const payload = verifyToken(token);
-
+  // 验证 Token（使用 Edge Runtime 兼容的函数）
+  const payload = await verifyTokenEdge(token);
   // 如果 Token 无效，重定向到登录页
   if (!payload) {
     const loginUrl = new URL("/login", request.url);

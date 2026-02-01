@@ -3,6 +3,7 @@
  */
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 const TOKEN_NAME = "auth_token";
@@ -26,7 +27,7 @@ export function generateToken(userId: string, email: string): string {
 }
 
 /**
- * 验证 JWT Token
+ * 验证 JWT Token（用于 Node.js Runtime，如 API 路由）
  * @param token JWT Token 字符串
  * @returns Token 载荷或 null（如果无效）
  */
@@ -35,6 +36,34 @@ export function verifyToken(token: string): TokenPayload | null {
     const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
     return decoded;
   } catch (error) {
+    console.error("[JWT] Token verification failed:", error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/**
+ * 验证 JWT Token（用于 Edge Runtime，如 Middleware）
+ * @param token JWT Token 字符串
+ * @returns Token 载荷或 null（如果无效）
+ */
+export async function verifyTokenEdge(token: string): Promise<TokenPayload | null> {
+  try {
+    // 将 JWT_SECRET 转换为 Uint8Array（jose 库要求）
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    
+    const { payload } = await jwtVerify(token, secret);
+    
+    // 确保 payload 包含所需的字段
+    if (payload.userId && payload.email) {
+      return {
+        userId: payload.userId as string,
+        email: payload.email as string,
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("[JWT Edge] Token verification failed:", error instanceof Error ? error.message : error);
     return null;
   }
 }

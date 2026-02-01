@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!validationResult.success) {
       const response: ApiResponse = {
         code: 400,
-        msg: validationResult.error.errors[0]?.message || "输入验证失败",
+        msg: validationResult.error.message || "输入验证失败",
       };
       return NextResponse.json(response, { status: 400 });
     }

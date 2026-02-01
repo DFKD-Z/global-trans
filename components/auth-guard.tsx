@@ -15,10 +15,14 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  console.log("loading", loading);
+    console.log("user", user);
 
   useEffect(() => {
     // 如果不在加载中且用户未登录，重定向到登录页
+    
     if (!loading && !user) {
+      console.log("redirecting to /login");
       const currentPath = window.location.pathname;
       router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
     }

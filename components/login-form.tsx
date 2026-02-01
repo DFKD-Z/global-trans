@@ -45,10 +45,10 @@ export function LoginForm({
       if (data.code === 200 && data.data) {
         // 更新认证状态
         login(data.data);
-        // 跳转到之前尝试访问的页面，或首页
+        // 跳转到之前尝试访问的页面，或项目管理界面
+        // 使用 window.location.href 进行完整页面跳转，确保 cookie 被正确携带
         const redirect = searchParams.get("redirect");
-        router.push(redirect || "/");
-        router.refresh();
+        window.location.href = redirect || "/";
       } else {
         setError(data.msg || "登录失败，请稍后重试");
       }
