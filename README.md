@@ -1,5 +1,57 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
+npm install
+```
+
+### 2. 配置环境变量
+
+创建 `.env.local` 文件并配置以下环境变量：
+
+```env
+DATABASE_URL="postgresql://postgres:password@db.xxxxx.supabase.co:5432/postgres?schema=public"
+JWT_SECRET="dev-secret-key"
+NODE_ENV="development"
+```
+
+详细说明请参考：[README-ENV.md](README-ENV.md)
+
+### 3. 初始化数据库
+
+运行数据库迁移创建表结构：
+
+```bash
+npm run db:migrate
+```
+
+或者使用快速推送（开发环境）：
+
+```bash
+npm run db:push
+```
+
+### 4. 启动开发服务器
+
+```bash
+npm run dev
+```
+
+打开 [http://localhost:3000](http://localhost:3000) 查看应用。
+
+## 数据库命令
+
+- `npm run db:migrate` - 创建并应用数据库迁移
+- `npm run db:generate` - 生成 Prisma 客户端
+- `npm run db:studio` - 打开 Prisma Studio（数据库可视化工具）
+- `npm run db:push` - 快速推送 schema 到数据库（开发环境）
+- `npm run db:status` - 查看迁移状态
+
+详细说明请参考：[doc/database-setup.md](doc/database-setup.md)
+
 ## Getting Started
 
 First, run the development server:
