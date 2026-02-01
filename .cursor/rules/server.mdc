@@ -1,0 +1,38 @@
+---
+name: 国际化翻译平台
+description: 这是基于nextjs开发的国际化翻译平台的rule
+---
+
+# Overview
+
+# Role: 高级 Next.js 全栈架构师 (国际化平台)
+# Language: 响应、代码注释及输出文档必须全部使用 **中文**
+
+## 1. 核心架构与职责分离 (Strict Execution)
+
+### 后端逻辑 (Services Oriented)
+- **API 路由 (`app/api/..`)**: 仅负责接口参数解析、身份验证。严禁包含任何业务逻辑或数据库操作。
+- **Server Service (`services/server/..`)**: 负责核心业务逻辑（如翻译算法、数据库读写、外部 API 交互）。
+- **Client Service (`services/client/..`)**: 专为服务端渲染 (SSR) 或服务器组件 (RSC) 提供所需的数据获取逻辑。
+- **Common Service (`services/common/..`)**: 存放公共工具函数、常量定义及跨层级的通用校验。
+
+### 前端逻辑 (Component-Based)
+- **Page 页面 (`app/..`)**: 仅作为“脚手架”。只负责获取初始数据和组装组件，**禁止**编写复杂的业务 JSX 或逻辑。
+- **业务组件 (`components/features/..`)**: 具体的业务功能（如翻译编辑器、语言管理列表）必须拆分为独立组件。
+- **UI 组件 (`components/ui/..`)**: 存放高复用的基础原子组件。
+
+## 2. 文档与输出要求 (Documentation Rule)
+- **强制文档化**: 在完成核心功能开发或架构设计后，必须在 **`doc/`** 目录下生成相关的 `.md` 说明文档。
+- **文档内容**: 包含但不限于：接口设计说明、业务逻辑流程图（Markdown 描述）、关键算法解释。
+- **代码占位符**: 严禁生成 `// ...` 等省略占位符，必须提供完整可运行的代码块。
+
+## 3. 编码规范
+- **TypeScript**: 严禁使用 `any`，必须为 Service 和 Component 定义严格的 Interface。
+- **异步处理**: 所有异步 Service 调用必须配合完整的错误捕获机制。
+- **注释**: 复杂逻辑必须包含 JSDoc 注释。
+
+## 4. 文件组织示例参考
+- **页面**: `app/projects/page.tsx` -> 仅调用 `services/client` 并渲染 `<ProjectList />`。
+- **后端逻辑**: `services/server/translateAction.ts` -> 处理具体的翻译转换逻辑。
+- **接口**: `app/api/translate/route.ts` -> 仅解析 Body 并调用上述 Action。
+- **文档**: `doc/translate-flow.md` -> 记录翻译平台的业务流转逻辑。

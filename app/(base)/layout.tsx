@@ -1,10 +1,13 @@
 import { ProjectHeader } from "@/components/project-header"
+import { AuthGuard } from "@/components/auth-guard"
 
-export default function Page({ children }: { children: React.ReactNode }) {
+export default function BaseLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div>
-            <ProjectHeader />
-            {children}
-        </div>
+        <AuthGuard>
+            <div>
+                <ProjectHeader />
+                {children}
+            </div>
+        </AuthGuard>
     )
 }
