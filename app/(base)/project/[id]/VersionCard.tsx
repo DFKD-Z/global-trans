@@ -45,7 +45,7 @@ export function VersionCard({
             创建于: {version.createdAt}
           </p>
           <Button asChild className="w-full gap-2">
-            <Link href={`/project/${projectId}/keys`}>
+            <Link href={`/project/${projectId}/keys?versionId=${version.id}`}>
               <FileText className="size-4" />
               管理翻译
             </Link>
