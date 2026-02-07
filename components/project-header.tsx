@@ -3,26 +3,28 @@
 import Link from "next/link"
 import {
   Search,
-  Github,
-  LayoutGrid,
-  Plus,
+  User,
 } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarImage } from "@radix-ui/react-avatar"
+import { AvatarFallback } from "@radix-ui/react-avatar"
+import { useAuth } from "@/app/provider/AuthProvider"
 
 const NAV_LINKS = [
-  { label: "文档", href: "/docs" },
-  { label: "组件", href: "/components" },
-  { label: "Blocks", href: "/blocks" },
-  { label: "图表", href: "/charts" },
-  { label: "目录", href: "/directory" },
-  { label: "Create", href: "/create" },
-  { label: "Dashboard", href: "/dashboard" },
+  // { label: "文档", href: "/docs" },
+  // { label: "组件", href: "/components" },
+  // { label: "Blocks", href: "/blocks" },
+  // { label: "图表", href: "/charts" },
+  // { label: "目录", href: "/directory" },
+  // { label: "Create", href: "/create" },
+  // { label: "Dashboard", href: "/dashboard" },
 ] as const
 
 export function ProjectHeader() {
+
+  const { logout } = useAuth();
   return (
     <header
       className={cn(
@@ -78,45 +80,7 @@ export function ProjectHeader() {
           />
         </div>
 
-        {/* Pill: 98K */}
-        <span
-          className={cn(
-            "hidden shrink-0 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-[#a1a1aa] lg:inline-block"
-          )}
-        >
-          98K
-        </span>
-
-        {/* GitHub */}
-        <a
-          href="https://github.com/shadcn-ui/ui"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors",
-            "text-[#a1a1aa] hover:bg-white/5 hover:text-white"
-          )}
-          aria-label="GitHub 105k stars"
-        >
-          <Github className="size-4 shrink-0" />
-          <span>105k</span>
-        </a>
-
-        {/* Components / Directory icon + 101 */}
-        <a
-          href="/components"
-          className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors",
-            "text-[#a1a1aa] hover:bg-white/5 hover:text-white"
-          )}
-          aria-label="组件 101"
-        >
-          <LayoutGrid className="size-4 shrink-0" />
-          <span>101</span>
-        </a>
-
-        {/* New Project */}
-        <Button
+        {/* <Button
           asChild
           className={cn(
             "h-8 shrink-0 gap-1.5 rounded-md px-3 font-medium",
@@ -127,7 +91,23 @@ export function ProjectHeader() {
             <Plus className="size-4" />
             New Project
           </Link>
-        </Button>
+        </Button> */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Avatar>
+              <AvatarImage className="size-6" src="https://github.com/shadcn.png" />
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-40" align="start">
+            <DropdownMenuItem>
+              <div onClick={logout} className="flex items-center gap-2">
+                <User className="size-4" />
+                退出登录
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   )
