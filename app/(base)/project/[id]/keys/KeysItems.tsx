@@ -10,6 +10,7 @@ import { KeyEditorCard } from "./KeyEditorCard"
 import { KeysEmpty } from "./KeysEmpty"
 import { CreateKeyDialog } from "./CreateKeyDialog"
 import { ExportJsonDialog, buildNestedExportJson } from "./ExportJsonDialog"
+import { ImportJsonDialog } from "./ImportJsonDialog"
 import type { TranslationKey } from "./types"
 import { getKeys, createKey, batchUpdateKeys } from "@/app/services/client"
 import { Brain } from "lucide-react"
@@ -22,6 +23,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
   const [createOpen, setCreateOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
   const [exportOpen, setExportOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [exportPreviewData, setExportPreviewData] = useState<Record<
     string,
     Record<string, unknown>
@@ -155,7 +157,12 @@ export function KeysItems({ projectId }: { projectId: string }) {
               <Save className="size-4" />
               保存
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => setImportOpen(true)}
+            >
               <Upload className="size-4" />
               导入JSON
             </Button>
@@ -181,7 +188,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
         {isEmpty && (
           <KeysEmpty
             onCreateKey={() => setCreateOpen(true)}
-            onImportJson={() => { }}
+            onImportJson={() => setImportOpen(true)}
           />
         )}
 
@@ -211,6 +218,13 @@ export function KeysItems({ projectId }: { projectId: string }) {
         open={exportOpen}
         onOpenChange={setExportOpen}
         exportData={exportPreviewData}
+      />
+      <ImportJsonDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        versionId={versionId}
+        currentKeys={keys}
+        onImportSuccess={fetchKeys}
       />
     </div>
   )
