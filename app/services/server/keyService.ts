@@ -1,7 +1,7 @@
 /**
- * 翻译键业务逻辑服务
+ * 翻译键业务逻辑服务（服务端专用）
  */
-import { db } from "@/app/services/common/db";
+import { db } from "@/app/services/server/db";
 import { getVersionById } from "./versionService";
 
 /**

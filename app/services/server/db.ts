@@ -1,5 +1,5 @@
 /**
- * Prisma 客户端初始化
+ * Prisma 客户端初始化（服务端专用）
  * 使用单例模式，避免重复创建连接
  */
 import { PrismaClient } from "@/lib/generated/prisma";

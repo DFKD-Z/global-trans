@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { apiFetch } from "@/lib/apiClient"
+import { createProject } from "@/app/services/client"
 
 const LANGUAGES = [
     {
@@ -82,32 +82,20 @@ export function CreateDialog({ children, onSuccess }: CreateDialogProps) {
     }
 
     try {
-      const response = await apiFetch("/api/projects", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || undefined,
-          languages: selectedLanguages,
-        }),
+      await createProject({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        languages: selectedLanguages,
       })
-
-      const data = await response.json()
-
-      if (data.code === 200) {
         setOpen(false)
         setName("")
         setDescription("")
         setSelectedLanguages([])
         router.refresh()
         onSuccess?.()
-      } else {
-        setError(data.msg || "创建项目失败")
-      }
     } catch (err) {
-      setError("网络错误，请稍后重试")
+      const message = err instanceof Error ? err.message : "网络错误，请稍后重试"
+      setError(message)
     } finally {
       setLoading(false)
     }

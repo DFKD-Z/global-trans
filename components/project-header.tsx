@@ -25,21 +25,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { apiFetch } from "@/lib/apiClient"
-
-/** 全局搜索结果（与 API 返回的 data 结构一致） */
-interface GlobalSearchResult {
-  projects: Array<{ id: string; name: string }>
-  versions: Array<{ id: string; name: string; projectId: string; projectName: string }>
-  keys: Array<{
-    id: string
-    name: string
-    versionId: string
-    projectId: string
-    versionName: string
-    projectName: string
-  }>
-}
+import { search, type GlobalSearchResult } from "@/app/services/client"
 
 const NAV_LINKS = [
   // { label: "文档", href: "/docs" },
@@ -76,14 +62,8 @@ const SearchCommand = ({ children }: { children: React.ReactNode }) => {
     setLoading(true)
     try {
       const keyword = getSearchKeywordOnly(q)
-      const url = keyword ? `/api/search?q=${encodeURIComponent(keyword)}` : "/api/search"
-      const res = await apiFetch(url)
-      const json = await res.json()
-      if (json.code === 200 && json.data) {
-        setResult(json.data as GlobalSearchResult)
-      } else {
-        setResult({ projects: [], versions: [], keys: [] })
-      }
+      const data = await search(keyword || undefined)
+      setResult(data)
     } catch {
       setResult({ projects: [], versions: [], keys: [] })
     } finally {

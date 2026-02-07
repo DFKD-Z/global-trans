@@ -62,7 +62,7 @@ const updateKeySchema = z.object({
     .string()
     .regex(/^[a-zA-Z0-9._-]+$/, "翻译键名称只能包含字母、数字、点、下划线和连字符")
     .optional(),
-  values: z.record(z.string()).optional(),
+  values: z.record(z.string(), z.string()).optional(),
 });
 
 /**
@@ -91,7 +91,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           code: 400,
-          msg: validationResult.error.errors[0]?.message || "输入验证失败",
+          msg: validationResult.error.issues[0]?.message || "输入验证失败",
         } satisfies ApiResponse,
         { status: 400 }
       );

@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button"
 import { KeyEditorCard } from "./KeyEditorCard"
 import { KeysEmpty } from "./KeysEmpty"
 import { CreateKeyDialog } from "./CreateKeyDialog"
+import { ExportJsonDialog, buildNestedExportJson } from "./ExportJsonDialog"
 import type { TranslationKey } from "./types"
-import { apiFetch } from "@/lib/apiClient"
+import { getKeys, createKey, batchUpdateKeys } from "@/app/services/client"
 import { Brain } from "lucide-react"
 
 export function KeysItems({ projectId }: { projectId: string }) {
@@ -20,6 +21,11 @@ export function KeysItems({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
+  const [exportOpen, setExportOpen] = useState(false)
+  const [exportPreviewData, setExportPreviewData] = useState<Record<
+    string,
+    Record<string, unknown>
+  > | null>(null)
   const isFetchingRef = useRef(false)
 
   const isEmpty = keys.length === 0
@@ -36,26 +42,16 @@ export function KeysItems({ projectId }: { projectId: string }) {
 
     try {
       setLoading(true)
-      const response = await apiFetch(`/api/versions/${versionId}/keys`)
-      const result = await response.json()
-
-      if (result.code === 200 && result.data) {
-        setKeys(
-          result.data.map((key: {
-            id: string
-            name: string
-            values: Array<{ langCode: string; content: string }>
-          }) => ({
-            id: key.id,
-            key: key.name,
-            values: Object.fromEntries(
-              key.values.map((v) => [v.langCode, v.content])
-            ),
-          }))
-        )
-      } else {
-        console.error("获取翻译键列表失败:", result.msg)
-      }
+      const result = await getKeys(versionId)
+      setKeys(
+        result.map((key) => ({
+          id: key.id,
+          key: key.name,
+          values: Object.fromEntries(
+            key.values.map((v) => [v.langCode, v.content])
+          ),
+        }))
+      )
     } catch (err) {
       console.error("网络错误:", err)
     } finally {
@@ -73,28 +69,13 @@ export function KeysItems({ projectId }: { projectId: string }) {
     if (!newKeyName.trim() || !versionId) return
 
     try {
-      const response = await apiFetch(`/api/versions/${versionId}/keys`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: newKeyName.trim(),
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.code === 200) {
-        toast.success("创建翻译键成功")
-        setNewKeyName("")
-        setCreateOpen(false)
-        fetchKeys()
-      } else {
-        toast.error(data.msg || "创建翻译键失败")
-      }
+      await createKey(versionId, { name: newKeyName.trim() })
+      toast.success("创建翻译键成功")
+      setNewKeyName("")
+      setCreateOpen(false)
+      fetchKeys()
     } catch (err) {
-      toast.error("网络错误，请稍后重试")
+      toast.error(err instanceof Error ? err.message : "网络错误，请稍后重试")
     }
   }
 
@@ -102,25 +83,17 @@ export function KeysItems({ projectId }: { projectId: string }) {
   const handleSaveKeys = async () => {
     if (!versionId || keys.length === 0) return
     try {
-      const response = await apiFetch(`/api/versions/${versionId}/keys`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          keys: keys.map((item) => ({
-            id: item.id,
-            name: item.key,
-            values: item.values,
-          })),
-        }),
-      })
-      const data = await response.json()
-      if (data.code === 200) {
-        toast.success("保存成功")
-      } else {
-        toast.error(data.msg || "保存失败")
-      }
+      await batchUpdateKeys(
+        versionId,
+        keys.map((item) => ({
+          id: item.id,
+          name: item.key,
+          values: item.values,
+        }))
+      )
+      toast.success("保存成功")
     } catch (err) {
-      toast.error("网络错误，请稍后重试")
+      toast.error(err instanceof Error ? err.message : "网络错误，请稍后重试")
     }
   }
 
@@ -142,6 +115,12 @@ export function KeysItems({ projectId }: { projectId: string }) {
 
   const handleDeleteKey = (keyId: string) => {
     setKeys((prev) => prev.filter((k) => k.id !== keyId))
+  }
+
+  const handleExportJsonClick = () => {
+    const data = buildNestedExportJson(keys)
+    setExportPreviewData(data)
+    setExportOpen(true)
   }
 
   if (!versionId) {
@@ -180,7 +159,13 @@ export function KeysItems({ projectId }: { projectId: string }) {
               <Upload className="size-4" />
               导入JSON
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={handleExportJsonClick}
+              disabled={isEmpty}
+            >
               <Download className="size-4" />
               导出JSON
             </Button>
@@ -221,6 +206,11 @@ export function KeysItems({ projectId }: { projectId: string }) {
         keyName={newKeyName}
         onKeyNameChange={setNewKeyName}
         onSubmit={handleCreateKey}
+      />
+      <ExportJsonDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        exportData={exportPreviewData}
       />
     </div>
   )

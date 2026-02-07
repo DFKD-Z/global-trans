@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button"
 import { VersionCard } from "./VersionCard"
 import { CreateVersionDialog } from "./CreateVersionDialog"
 import type { VersionItem } from "./types"
-import { apiFetch } from "@/lib/apiClient"
+import {
+  getVersions,
+  getProject,
+  createVersion,
+} from "@/app/services/client"
 
 export function VersionItems({ projectId }: { projectId: string }) {
   const [versions, setVersions] = useState<VersionItem[]>([])
@@ -25,32 +29,23 @@ export function VersionItems({ projectId }: { projectId: string }) {
 
     try {
       setLoading(true)
-      const response = await apiFetch(`/api/projects/${projectId}/versions`)
-      const result = await response.json()
-
-      if (result.code === 200 && result.data) {
-        setVersions(
-          result.data.map((v: { id: string; name: string; createdAt: Date }) => ({
-            id: v.id,
-            name: v.name,
-            description: "",
-            createdAt: new Date(v.createdAt).toLocaleDateString("zh-CN", {
-              year: "numeric",
-              month: "numeric",
-              day: "numeric",
-            }),
-          }))
-        )
-      } else {
-        console.error("获取版本列表失败:", result.msg)
-      }
-
-      // 获取项目信息
-      const projectResponse = await apiFetch(`/api/projects/${projectId}`)
-      const projectResult = await projectResponse.json()
-      if (projectResult.code === 200 && projectResult.data) {
-        setProjectName(projectResult.data.name)
-      }
+      const [versionsData, projectData] = await Promise.all([
+        getVersions(projectId),
+        getProject(projectId),
+      ])
+      setVersions(
+        versionsData.map((v) => ({
+          id: v.id,
+          name: v.name,
+          description: "",
+          createdAt: new Date(v.createdAt).toLocaleDateString("zh-CN", {
+            year: "numeric",
+            month: "numeric",
+            day: "numeric",
+          }),
+        }))
+      )
+      setProjectName(projectData.name)
     } catch (err) {
       console.error("网络错误:", err)
     } finally {
@@ -68,28 +63,13 @@ export function VersionItems({ projectId }: { projectId: string }) {
     if (!versionName.trim()) return
 
     try {
-      const response = await apiFetch(`/api/projects/${projectId}/versions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: versionName.trim(),
-        }),
-      })
-
-      const data = await response.json()
-
-      if (data.code === 200) {
-        setVersionName("")
-        setVersionDesc("")
-        setOpen(false)
-        fetchVersions()
-      } else {
-        alert(data.msg || "创建版本失败")
-      }
+      await createVersion(projectId, { name: versionName.trim() })
+      setVersionName("")
+      setVersionDesc("")
+      setOpen(false)
+      fetchVersions()
     } catch (err) {
-      alert("网络错误，请稍后重试")
+      alert(err instanceof Error ? err.message : "网络错误，请稍后重试")
     }
   }
 

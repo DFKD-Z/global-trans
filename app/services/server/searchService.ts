@@ -1,8 +1,8 @@
 /**
- * 全局搜索业务逻辑服务
+ * 全局搜索业务逻辑服务（服务端专用）
  * 按关键词搜索当前用户有权限的项目、版本、翻译键
  */
-import { db } from "@/app/services/common/db";
+import { db } from "@/app/services/server/db";
 
 /** 搜索结果中的项目项 */
 export interface SearchProjectItem {

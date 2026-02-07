@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { TranslationKey } from "./types"
 import { LANGUAGES } from "./types"
-import { apiFetch } from "@/lib/apiClient"
+import { deleteKey } from "@/app/services/client"
 
 export function KeyEditorCard({
   item,
@@ -39,17 +39,10 @@ export function KeyEditorCard({
     setConfirmOpen(false)
     setDeleting(true)
     try {
-      const response = await apiFetch(`/api/keys/${item.id}`, {
-        method: "DELETE",
-      })
-      const data = await response.json()
-      if (data.code === 200) {
-        onDelete()
-      } else {
-        alert(data.msg || "删除失败")
-      }
-    } catch {
-      alert("网络错误，请稍后重试")
+      await deleteKey(item.id)
+      onDelete()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "网络错误，请稍后重试")
     } finally {
       setDeleting(false)
     }

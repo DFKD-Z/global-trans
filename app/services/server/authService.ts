@@ -1,8 +1,8 @@
 /**
- * 认证业务逻辑服务
+ * 认证业务逻辑服务（服务端专用）
  */
-import { db } from "@/app/services/common/db";
-import { hashPassword, verifyPassword } from "@/app/services/common/password";
+import { db } from "@/app/services/server/db";
+import { hashPassword, verifyPassword } from "@/app/services/server/password";
 import { generateToken } from "@/app/services/common/jwt";
 import type {
   RegisterInput,

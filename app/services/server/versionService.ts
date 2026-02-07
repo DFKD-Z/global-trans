@@ -1,7 +1,7 @@
 /**
- * 版本业务逻辑服务
+ * 版本业务逻辑服务（服务端专用）
  */
-import { db } from "@/app/services/common/db";
+import { db } from "@/app/services/server/db";
 import { getProjectById } from "./projectService";
 
 /**

@@ -33,21 +33,16 @@ import { FolderCode, PencilIcon, TrashIcon } from "lucide-react"
 import { useMemo, useState, useEffect, useCallback } from "react"
 import { CreateDialog } from "./Create"
 import { useRouter } from "next/navigation"
-import { apiFetch } from "@/lib/apiClient"
+import {
+  getProjects,
+  deleteProject,
+  type ProjectItem,
+} from "@/app/services/client"
 
-export type ProjectItem = {
-  id: string
-  name: string
-  description: string | null
-  languages: Array<{
-    id: string
-    code: string
-    isSource: boolean
-  }>
-  createdAt: Date
-}
+export type { ProjectItem }
 
-export function EmptyItem({ data, fetchProjects }: { data?: ProjectItem[], fetchProjects: () => void }) {
+
+export function EmptyItem({ data, fetchProjects }: { data?: ProjectItem[]; fetchProjects: () => void }) {
   const hasData = useMemo(() => data && data.length > 0, [data])
   const title = useMemo(() => hasData ? "未找到项目" : "还没有项目", [hasData])
   const description = useMemo(() => hasData ? "未找到匹配的项目" : "您还没有创建任何项目。开始创建您的第一个项目吧。", [hasData])
@@ -82,19 +77,10 @@ export function CardItem({ item, onDelete }: CardItemProps) {
     setConfirmOpen(false)
     setDeleting(true)
     try {
-      const response = await apiFetch(`/api/projects/${item.id}`, {
-        method: "DELETE",
-      })
-
-      const data = await response.json()
-
-      if (data.code === 200) {
-        onDelete(item.id)
-      } else {
-        alert(data.msg || "删除失败")
-      }
+      await deleteProject(item.id)
+      onDelete(item.id)
     } catch (err) {
-      alert("网络错误，请稍后重试")
+      alert(err instanceof Error ? err.message : "网络错误，请稍后重试")
     } finally {
       setDeleting(false)
     }
@@ -174,16 +160,10 @@ export function ProjectItems() {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const response = await apiFetch("/api/projects")
-      const result = await response.json()
-
-      if (result.code === 200 && result.data) {
-        setData(result.data)
-      } else {
-        console.error("获取项目列表失败:", result.msg)
-      }
+      const result = await getProjects()
+      setData(result)
     } catch (err) {
-      console.error("网络错误:", err)
+      console.error("获取项目列表失败:", err)
     } finally {
       setLoading(false)
     }

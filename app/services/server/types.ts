@@ -1,6 +1,10 @@
 /**
- * 认证服务相关的类型定义
+ * 服务端业务逻辑相关的类型定义
  */
+import type { ApiResponse } from "@/app/services/common/types";
+
+// 重新导出 ApiResponse 供 API 路由使用
+export type { ApiResponse };
 
 /**
  * 注册输入参数
@@ -34,13 +38,4 @@ export interface UserResponse {
 export interface AuthResponse {
   user: UserResponse;
   token: string;
-}
-
-/**
- * API 统一响应格式
- */
-export interface ApiResponse<T = unknown> {
-  code: number;
-  data?: T;
-  msg: string;
 }

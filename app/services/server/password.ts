@@ -1,5 +1,5 @@
 /**
- * 密码加密和验证工具
+ * 密码加密和验证工具（服务端专用）
  */
 import bcrypt from "bcryptjs";
 
