@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useRef, useEffect } from "react"
-import { MessageCircle, Send, Loader2, Brain } from "lucide-react"
+import { MessageCircle, Send, Loader2, Brain, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -147,6 +147,14 @@ export function AiChat() {
           {/* 输入区 */}
           <div className="shrink-0 border-t p-4">
             <div className="flex justify-left mb-2">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <Plus className="size-4" />
+                创建项目
+              </Button>
+              <Button variant="ghost" size="sm" className="gap-2">
+                <Plus className="size-4" />
+                创建版本
+              </Button>
               <Button variant="ghost" size="sm" className="gap-2">
                 <Brain className="size-4" />
                 一键翻译

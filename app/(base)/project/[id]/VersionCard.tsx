@@ -44,7 +44,7 @@ export function VersionCard({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div>
       <Card className="overflow-hidden">
         <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
           <div className="flex items-center gap-3">

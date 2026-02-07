@@ -114,7 +114,7 @@ export function VersionItems({ projectId }: { projectId: string }) {
             <p className="text-muted-foreground">还没有版本，创建第一个版本吧</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {versions.map((v) => (
               <VersionCard
                 key={v.id}
