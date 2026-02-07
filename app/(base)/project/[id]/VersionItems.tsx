@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { VersionCard } from "./VersionCard"
 import { CreateVersionDialog } from "./CreateVersionDialog"
 import type { VersionItem } from "./types"
+import { apiFetch } from "@/lib/apiClient"
 
 export function VersionItems({ projectId }: { projectId: string }) {
   const [versions, setVersions] = useState<VersionItem[]>([])
@@ -24,7 +25,7 @@ export function VersionItems({ projectId }: { projectId: string }) {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/projects/${projectId}/versions`)
+      const response = await apiFetch(`/api/projects/${projectId}/versions`)
       const result = await response.json()
 
       if (result.code === 200 && result.data) {
@@ -45,7 +46,7 @@ export function VersionItems({ projectId }: { projectId: string }) {
       }
 
       // 获取项目信息
-      const projectResponse = await fetch(`/api/projects/${projectId}`)
+      const projectResponse = await apiFetch(`/api/projects/${projectId}`)
       const projectResult = await projectResponse.json()
       if (projectResult.code === 200 && projectResult.data) {
         setProjectName(projectResult.data.name)
@@ -67,7 +68,7 @@ export function VersionItems({ projectId }: { projectId: string }) {
     if (!versionName.trim()) return
 
     try {
-      const response = await fetch(`/api/projects/${projectId}/versions`, {
+      const response = await apiFetch(`/api/projects/${projectId}/versions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,26 +93,8 @@ export function VersionItems({ projectId }: { projectId: string }) {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("确定要删除这个版本吗？此操作不可恢复。")) {
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/versions/${id}`, {
-        method: "DELETE",
-      })
-
-      const data = await response.json()
-
-      if (data.code === 200) {
-        setVersions((prev) => prev.filter((v) => v.id !== id))
-      } else {
-        alert(data.msg || "删除失败")
-      }
-    } catch (err) {
-      alert("网络错误，请稍后重试")
-    }
+  const handleDelete = (id: string) => {
+    setVersions((prev) => prev.filter((v) => v.id !== id))
   }
 
   if (loading) {
@@ -157,7 +140,7 @@ export function VersionItems({ projectId }: { projectId: string }) {
                 key={v.id}
                 projectId={projectId}
                 version={v}
-                onDelete={() => handleDelete(v.id)}
+                onDelete={handleDelete}
               />
             ))}
           </div>

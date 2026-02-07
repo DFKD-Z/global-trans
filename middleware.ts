@@ -1,78 +1,91 @@
 /**
- * Next.js Middleware - 路由保护
- * 在服务端拦截未授权的请求，重定向到登录页
+ * Next.js Middleware - 统一认证与路由保护
+ * 1. API 路由：验证 Token，未登录/过期返回 401 JSON，有效时注入用户信息到 headers
+ * 2. 页面路由：未登录/过期重定向到登录页
  */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getTokenFromCookies, verifyTokenEdge } from "@/app/services/common/jwt";
+import {
+  getTokenFromCookies,
+  verifyTokenEdge,
+} from "@/app/services/common/jwt";
+import {
+  AUTH_USER_ID_HEADER,
+  AUTH_USER_EMAIL_HEADER,
+} from "@/app/services/common/auth";
 
-// 需要保护的路由路径（匹配规则）
-const protectedPaths = ["/", "/project"];
+/** 无需认证的 API 路径前缀 */
+const PUBLIC_API_PREFIXES = [
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/logout",
+];
 
-// 公开路由（不需要认证）
-const publicPaths = ["/login", "/signup"];
+/** 需要保护的页面路径 */
+const PROTECTED_PAGE_PATHS = ["/", "/project"];
+
+/** 公开页面路径（不需要认证） */
+const PUBLIC_PAGE_PATHS = ["/login", "/signup"];
+
+/** 统一 401 响应体 */
+const UNAUTHORIZED_JSON = { code: 401, msg: "未登录或 Token 已过期" };
 
 /**
- * 检查路径是否需要保护
+ * 判断 API 路径是否需要认证
  */
-function isProtectedPath(pathname: string): boolean {
-  // 检查是否是公开路由
-  if (publicPaths.some((path) => pathname.startsWith(path))) {
-    return false;
-  }
+function isProtectedApiPath(pathname: string): boolean {
+  if (!pathname.startsWith("/api/")) return false;
+  return !PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
-  // 检查是否是受保护的路由
-  return protectedPaths.some((path) => {
-    if (path === "/") {
-      return pathname === "/";
-    }
-    return pathname.startsWith(path);
+/**
+ * 判断页面路径是否需要保护
+ */
+function isProtectedPagePath(pathname: string): boolean {
+  if (PUBLIC_PAGE_PATHS.some((p) => pathname.startsWith(p))) return false;
+  return PROTECTED_PAGE_PATHS.some((p) => {
+    if (p === "/") return pathname === "/";
+    return pathname.startsWith(p);
   });
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const token = getTokenFromCookies(request.cookies);
+  const payload = token ? await verifyTokenEdge(token) : null;
 
-  // 如果是公开路由，直接放行
-  if (!isProtectedPath(pathname)) {
+  // ========== API 路由：统一认证 ==========
+  if (pathname.startsWith("/api/")) {
+    if (!isProtectedApiPath(pathname)) {
+      return NextResponse.next();
+    }
+
+    if (!token || !payload) {
+      return NextResponse.json(UNAUTHORIZED_JSON, { status: 401 });
+    }
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set(AUTH_USER_ID_HEADER, payload.userId);
+    requestHeaders.set(AUTH_USER_EMAIL_HEADER, payload.email);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  // ========== 页面路由：未认证时重定向到登录页 ==========
+  if (!isProtectedPagePath(pathname)) {
     return NextResponse.next();
   }
 
-  // 获取 Token
-  const token = getTokenFromCookies(request.cookies);
-  
-  // 如果没有 Token，重定向到登录页
-  if (!token) {
-    const loginUrl = new URL("/login", request.url);
-    // 保存原始 URL，登录后可以跳转回来
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // 验证 Token（使用 Edge Runtime 兼容的函数）
-  const payload = await verifyTokenEdge(token);
-  // 如果 Token 无效，重定向到登录页
-  if (!payload) {
+  if (!token || !payload) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Token 有效，继续请求
   return NextResponse.next();
 }
 
-// 配置中间件匹配规则
 export const config = {
   matcher: [
-    /*
-     * 匹配所有路径，除了：
-     * - api 路由
-     * - _next/static (静态文件)
-     * - _next/image (图片优化)
-     * - favicon.ico (图标)
-     * - 公开文件 (public 目录)
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -3,14 +3,46 @@
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, Upload, Download, Plus } from "lucide-react"
+import { ArrowLeft, Upload, Download, Plus, Save, InfoIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
 import { KeyEditorCard } from "./KeyEditorCard"
 import { KeysEmpty } from "./KeysEmpty"
 import { CreateKeyForm } from "./CreateKeyForm"
 import { CreateKeyDialog } from "./CreateKeyDialog"
 import type { TranslationKey } from "./types"
-import { LANGUAGES } from "./types"
+import { apiFetch } from "@/lib/apiClient"
+
+const SaveResultAlert = ({
+  saveResultType,
+  saveResultMessage,
+  onClose,
+}: {
+  saveResultType: "success" | "error"
+  saveResultMessage: string
+  onClose: () => void
+}) => {
+  return (
+    <Alert variant={saveResultType === "error" ? "destructive" : "default"} className="relative pr-10">
+      <InfoIcon />
+      <AlertTitle>{saveResultType === "success" ? "保存成功" : "保存失败"}</AlertTitle>
+      <AlertDescription>{saveResultMessage}</AlertDescription>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute right-2 top-2 size-6"
+        onClick={onClose}
+        aria-label="关闭"
+      >
+        ×
+      </Button>
+    </Alert>
+  )
+}
 
 export function KeysItems({ projectId }: { projectId: string }) {
   const searchParams = useSearchParams()
@@ -19,6 +51,9 @@ export function KeysItems({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
+  const [saveResultOpen, setSaveResultOpen] = useState(false)
+  const [saveResultMessage, setSaveResultMessage] = useState("")
+  const [saveResultType, setSaveResultType] = useState<"success" | "error">("success")
   const isFetchingRef = useRef(false)
 
   const isEmpty = keys.length === 0
@@ -35,7 +70,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/versions/${versionId}/keys`)
+      const response = await apiFetch(`/api/versions/${versionId}/keys`)
       const result = await response.json()
 
       if (result.code === 200 && result.data) {
@@ -72,7 +107,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
     if (!newKeyName.trim() || !versionId) return
 
     try {
-      const response = await fetch(`/api/versions/${versionId}/keys`, {
+      const response = await apiFetch(`/api/versions/${versionId}/keys`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,14 +120,53 @@ export function KeysItems({ projectId }: { projectId: string }) {
       const data = await response.json()
 
       if (data.code === 200) {
+        setSaveResultMessage("创建翻译键成功")
+        setSaveResultType("success")
+        setSaveResultOpen(true)
         setNewKeyName("")
         setCreateOpen(false)
         fetchKeys()
       } else {
-        alert(data.msg || "创建翻译键失败")
+        setSaveResultMessage(data.msg || "创建翻译键失败")
+        setSaveResultType("error")
+        setSaveResultOpen(true)
       }
     } catch (err) {
-      alert("网络错误，请稍后重试")
+      setSaveResultMessage("网络错误，请稍后重试")
+      setSaveResultType("error")
+      setSaveResultOpen(true)
+    }
+  }
+
+  // 保存翻译键（键名和翻译值）- 单次请求批量更新
+  const handleSaveKeys = async () => {
+    if (!versionId || keys.length === 0) return
+    try {
+      const response = await apiFetch(`/api/versions/${versionId}/keys`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          keys: keys.map((item) => ({
+            id: item.id,
+            name: item.key,
+            values: item.values,
+          })),
+        }),
+      })
+      const data = await response.json()
+      if (data.code === 200) {
+        setSaveResultMessage("保存成功")
+        setSaveResultType("success")
+        setSaveResultOpen(true)
+      } else {
+        setSaveResultMessage(data.msg || "保存失败")
+        setSaveResultType("error")
+        setSaveResultOpen(true)
+      }
+    } catch (err) {
+      setSaveResultMessage("网络错误，请稍后重试")
+      setSaveResultType("error")
+      setSaveResultOpen(true)
     }
   }
 
@@ -106,26 +180,14 @@ export function KeysItems({ projectId }: { projectId: string }) {
     )
   }
 
-  const handleDeleteKey = async (keyId: string) => {
-    if (!confirm("确定要删除这个翻译键吗？此操作不可恢复。")) {
-      return
-    }
+  const handleUpdateKey = (keyId: string, newKey: string) => {
+    setKeys((prev) =>
+      prev.map((k) => (k.id === keyId ? { ...k, key: newKey } : k))
+    )
+  }
 
-    try {
-      const response = await fetch(`/api/keys/${keyId}`, {
-        method: "DELETE",
-      })
-
-      const data = await response.json()
-
-      if (data.code === 200) {
-        setKeys((prev) => prev.filter((k) => k.id !== keyId))
-      } else {
-        alert(data.msg || "删除失败")
-      }
-    } catch (err) {
-      alert("网络错误，请稍后重试")
-    }
+  const handleDeleteKey = (keyId: string) => {
+    setKeys((prev) => prev.filter((k) => k.id !== keyId))
   }
 
   if (!versionId) {
@@ -146,6 +208,15 @@ export function KeysItems({ projectId }: { projectId: string }) {
 
   return (
     <div className="min-h-screen bg-muted/30">
+      {saveResultOpen && (
+        <div className="fixed left-0 right-0 top-0 z-50 px-4 pt-4">
+          <SaveResultAlert
+            saveResultType={saveResultType}
+            saveResultMessage={saveResultMessage}
+            onClose={() => setSaveResultOpen(false)}
+          />
+        </div>
+      )}
       <div className="sticky top-0 z-10 border-b border-border bg-background">
         <div className="container mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <Link
@@ -156,6 +227,10 @@ export function KeysItems({ projectId }: { projectId: string }) {
             返回版本列表
           </Link>
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleSaveKeys}>
+              <Save className="size-4" />
+              保存
+            </Button>
             <Button variant="outline" size="sm" className="gap-2">
               <Upload className="size-4" />
               导入JSON
@@ -176,7 +251,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
         {isEmpty && (
           <KeysEmpty
             onCreateKey={() => setCreateOpen(true)}
-            onImportJson={() => {}}
+            onImportJson={() => { }}
           />
         )}
 
@@ -187,6 +262,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
                 key={item.id}
                 item={item}
                 onUpdateValue={handleUpdateValue}
+                onUpdateKey={handleUpdateKey}
                 onDelete={() => handleDeleteKey(item.id)}
               />
             ))}

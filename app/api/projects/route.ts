@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getTokenFromCookies, verifyToken } from "@/app/services/common/jwt";
+import { getAuthUserFromRequest } from "@/app/services/common/auth";
 import {
   createProject,
   getUserProjects,
@@ -28,30 +28,15 @@ const createProjectSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    // 从 Cookie 中获取 Token
-    const token = getTokenFromCookies(request.cookies);
-
-    if (!token) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "未登录",
-      };
-      return NextResponse.json(response, { status: 401 });
+    const authUser = getAuthUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { code: 401, msg: "未登录或 Token 已过期" } satisfies ApiResponse,
+        { status: 401 }
+      );
     }
 
-    // 验证 Token
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "Token 无效或已过期",
-      };
-      return NextResponse.json(response, { status: 401 });
-    }
-
-    // 获取项目列表
-    const projects = await getUserProjects(payload.userId);
+    const projects = await getUserProjects(authUser.userId);
 
     const response: ApiResponse = {
       code: 200,
@@ -79,32 +64,16 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // 从 Cookie 中获取 Token
-    const token = getTokenFromCookies(request.cookies);
-
-    if (!token) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "未登录",
-      };
-      return NextResponse.json(response, { status: 401 });
+    const authUser = getAuthUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { code: 401, msg: "未登录或 Token 已过期" } satisfies ApiResponse,
+        { status: 401 }
+      );
     }
 
-    // 验证 Token
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "Token 无效或已过期",
-      };
-      return NextResponse.json(response, { status: 401 });
-    }
-
-    // 解析请求体
     const body = await request.json();
 
-    // 验证输入
     const validationResult = createProjectSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -117,8 +86,7 @@ export async function POST(request: NextRequest) {
 
     const input: CreateProjectInput = validationResult.data;
 
-    // 调用业务逻辑
-    const project = await createProject(payload.userId, input);
+    const project = await createProject(authUser.userId, input);
 
     const response: ApiResponse = {
       code: 200,

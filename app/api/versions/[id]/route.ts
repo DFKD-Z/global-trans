@@ -4,7 +4,7 @@
  * DELETE /api/versions/[id] - 删除版本
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getTokenFromCookies, verifyToken } from "@/app/services/common/jwt";
+import { getAuthUserFromRequest } from "@/app/services/common/auth";
 import {
   getVersionById,
   deleteVersion,
@@ -20,32 +20,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // 从 Cookie 中获取 Token
-    const token = getTokenFromCookies(request.cookies);
-
-    if (!token) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "未登录",
-      };
-      return NextResponse.json(response, { status: 401 });
-    }
-
-    // 验证 Token
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "Token 无效或已过期",
-      };
-      return NextResponse.json(response, { status: 401 });
+    const authUser = getAuthUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { code: 401, msg: "未登录或 Token 已过期" } satisfies ApiResponse,
+        { status: 401 }
+      );
     }
 
     const { id } = await params;
 
-    // 获取版本详情
-    const version = await getVersionById(id, payload.userId);
+    const version = await getVersionById(id, authUser.userId);
 
     const response: ApiResponse = {
       code: 200,
@@ -78,32 +63,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // 从 Cookie 中获取 Token
-    const token = getTokenFromCookies(request.cookies);
-
-    if (!token) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "未登录",
-      };
-      return NextResponse.json(response, { status: 401 });
-    }
-
-    // 验证 Token
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "Token 无效或已过期",
-      };
-      return NextResponse.json(response, { status: 401 });
+    const authUser = getAuthUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { code: 401, msg: "未登录或 Token 已过期" } satisfies ApiResponse,
+        { status: 401 }
+      );
     }
 
     const { id } = await params;
 
-    // 删除版本
-    await deleteVersion(id, payload.userId);
+    await deleteVersion(id, authUser.userId);
 
     const response: ApiResponse = {
       code: 200,

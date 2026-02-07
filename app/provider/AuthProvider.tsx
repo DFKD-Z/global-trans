@@ -36,7 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const checkAuth = useCallback(async () => {
     try {
-      const response = await fetch("/api/auth/me");
+      // 使用原生 fetch：401 时仅表示未登录，由 AuthGuard 负责跳转
+      const response = await fetch("/api/auth/me", { credentials: "include" });
       const data = await response.json();
 
       if (data.code === 200 && data.data) {
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const logout = useCallback(async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       setUser(null);
       window.location.href = "/login";
     } catch (error) {

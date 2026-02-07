@@ -11,6 +11,16 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -23,6 +33,7 @@ import { FolderCode, PencilIcon, TrashIcon } from "lucide-react"
 import { useMemo, useState, useEffect, useCallback } from "react"
 import { CreateDialog } from "./Create"
 import { useRouter } from "next/navigation"
+import { apiFetch } from "@/lib/apiClient"
 
 export type ProjectItem = {
   id: string
@@ -41,7 +52,7 @@ export function EmptyItem({ data, fetchProjects }: { data?: ProjectItem[], fetch
   const title = useMemo(() => hasData ? "未找到项目" : "还没有项目", [hasData])
   const description = useMemo(() => hasData ? "未找到匹配的项目" : "您还没有创建任何项目。开始创建您的第一个项目吧。", [hasData])
   return (
-    <Empty>
+    <Empty className="border-2 border-dashed mt-4">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <FolderCode />
@@ -65,15 +76,13 @@ type CardItemProps = {
 
 export function CardItem({ item, onDelete }: CardItemProps) {
   const [deleting, setDeleting] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const handleDelete = async () => {
-    if (!confirm("确定要删除这个项目吗？此操作不可恢复。")) {
-      return
-    }
-
+    setConfirmOpen(false)
     setDeleting(true)
     try {
-      const response = await fetch(`/api/projects/${item.id}`, {
+      const response = await apiFetch(`/api/projects/${item.id}`, {
         method: "DELETE",
       })
 
@@ -127,12 +136,33 @@ export function CardItem({ item, onDelete }: CardItemProps) {
           variant="destructive"
           size="sm"
           className="w-1/4"
-          onClick={handleDelete}
+          onClick={() => setConfirmOpen(true)}
           disabled={deleting}
         >
           <TrashIcon className="w-4 h-4" />
         </Button>
       </CardFooter>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除项目</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除「{item.name}」吗？此操作不可恢复，项目下的所有版本和翻译数据将被一并删除。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">取消</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                {deleting ? "删除中..." : "确定删除"}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }
@@ -144,7 +174,7 @@ export function ProjectItems() {
 
   const fetchProjects = useCallback(async () => {
     try {
-      const response = await fetch("/api/projects")
+      const response = await apiFetch("/api/projects")
       const result = await response.json()
 
       if (result.code === 200 && result.data) {

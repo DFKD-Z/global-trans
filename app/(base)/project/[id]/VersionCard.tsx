@@ -1,10 +1,22 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { FileText, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { VersionItem } from "./types"
+import { apiFetch } from "@/lib/apiClient"
 
 export function VersionCard({
   projectId,
@@ -13,8 +25,31 @@ export function VersionCard({
 }: {
   projectId: string
   version: VersionItem
-  onDelete: () => void
+  onDelete: (id: string) => void
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    setConfirmOpen(false)
+    setDeleting(true)
+    try {
+      const response = await apiFetch(`/api/versions/${version.id}`, {
+        method: "DELETE",
+      })
+      const data = await response.json()
+      if (data.code === 200) {
+        onDelete(version.id)
+      } else {
+        alert(data.msg || "删除失败")
+      }
+    } catch {
+      alert("网络错误，请稍后重试")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="grid grid-cols-3 gap-4">
       <Card className="overflow-hidden">
@@ -34,7 +69,8 @@ export function VersionCard({
             variant="ghost"
             size="icon"
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={onDelete}
+            onClick={() => setConfirmOpen(true)}
+            disabled={deleting}
             aria-label="删除版本"
           >
             <Trash2 className="size-4" />
@@ -52,6 +88,27 @@ export function VersionCard({
           </Button>
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除版本</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除「{version.name}」吗？此操作不可恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">取消</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                {deleting ? "删除中..." : "确定删除"}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

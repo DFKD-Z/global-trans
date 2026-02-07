@@ -3,36 +3,21 @@
  * GET /api/auth/me
  */
 import { NextRequest, NextResponse } from "next/server";
-import { getTokenFromCookies, verifyToken } from "@/app/services/common/jwt";
+import { getAuthUserFromRequest } from "@/app/services/common/auth";
 import { getCurrentUser } from "@/app/services/server/authService";
 import type { ApiResponse, UserResponse } from "@/app/services/server/types";
 
 export async function GET(request: NextRequest) {
   try {
-    // 从 Cookie 中获取 Token
-    const token = getTokenFromCookies(request.cookies);
-
-    if (!token) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "未登录",
-      };
-      return NextResponse.json(response, { status: 401 });
+    const authUser = getAuthUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { code: 401, msg: "未登录或 Token 已过期" } satisfies ApiResponse,
+        { status: 401 }
+      );
     }
 
-    // 验证 Token
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "Token 无效或已过期",
-      };
-      return NextResponse.json(response, { status: 401 });
-    }
-
-    // 获取用户信息
-    const user = await getCurrentUser(payload.userId);
+    const user = await getCurrentUser(authUser.userId);
 
     const response: ApiResponse<UserResponse> = {
       code: 200,

@@ -229,8 +229,27 @@ export async function deleteProject(
     throw new Error("只有项目管理员可以删除项目");
   }
 
-  // 删除项目（级联删除会自动删除关联的数据）
-  await db.project.delete({
-    where: { id: projectId },
+  // 因外键 ON DELETE RESTRICT，需按依赖顺序删除：TransValue -> TransKey -> Version -> ProjectLanguage -> ProjectMember -> Project
+  await db.$transaction(async (tx) => {
+    const versions = await tx.version.findMany({
+      where: { projectId },
+      select: { id: true },
+    });
+    const versionIds = versions.map((v) => v.id);
+    if (versionIds.length > 0) {
+      const keys = await tx.transKey.findMany({
+        where: { versionId: { in: versionIds } },
+        select: { id: true },
+      });
+      const keyIds = keys.map((k) => k.id);
+      if (keyIds.length > 0) {
+        await tx.transValue.deleteMany({ where: { keyId: { in: keyIds } } });
+      }
+      await tx.transKey.deleteMany({ where: { versionId: { in: versionIds } } });
+      await tx.version.deleteMany({ where: { projectId } });
+    }
+    await tx.projectLanguage.deleteMany({ where: { projectId } });
+    await tx.projectMember.deleteMany({ where: { projectId } });
+    await tx.project.delete({ where: { id: projectId } });
   });
 }

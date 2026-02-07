@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { apiFetch } from "@/lib/apiClient"
 
 const LANGUAGES = [
     {
@@ -81,7 +82,7 @@ export function CreateDialog({ children, onSuccess }: CreateDialogProps) {
     }
 
     try {
-      const response = await fetch("/api/projects", {
+      const response = await apiFetch("/api/projects", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

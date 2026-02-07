@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getTokenFromCookies, verifyToken } from "@/app/services/common/jwt";
+import { getAuthUserFromRequest } from "@/app/services/common/auth";
 import {
   createVersion,
   getProjectVersions,
@@ -31,32 +31,17 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // 从 Cookie 中获取 Token
-    const token = getTokenFromCookies(request.cookies);
-
-    if (!token) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "未登录",
-      };
-      return NextResponse.json(response, { status: 401 });
-    }
-
-    // 验证 Token
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "Token 无效或已过期",
-      };
-      return NextResponse.json(response, { status: 401 });
+    const authUser = getAuthUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { code: 401, msg: "未登录或 Token 已过期" } satisfies ApiResponse,
+        { status: 401 }
+      );
     }
 
     const { id: projectId } = await params;
 
-    // 获取版本列表
-    const versions = await getProjectVersions(projectId, payload.userId);
+    const versions = await getProjectVersions(projectId, authUser.userId);
 
     const response: ApiResponse = {
       code: 200,
@@ -87,31 +72,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // 从 Cookie 中获取 Token
-    const token = getTokenFromCookies(request.cookies);
-
-    if (!token) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "未登录",
-      };
-      return NextResponse.json(response, { status: 401 });
-    }
-
-    // 验证 Token
-    const payload = verifyToken(token);
-
-    if (!payload) {
-      const response: ApiResponse = {
-        code: 401,
-        msg: "Token 无效或已过期",
-      };
-      return NextResponse.json(response, { status: 401 });
+    const authUser = getAuthUserFromRequest(request);
+    if (!authUser) {
+      return NextResponse.json(
+        { code: 401, msg: "未登录或 Token 已过期" } satisfies ApiResponse,
+        { status: 401 }
+      );
     }
 
     const { id: projectId } = await params;
 
-    // 解析请求体
     const body = await request.json();
 
     // 验证输入
@@ -130,8 +100,7 @@ export async function POST(
       projectId,
     };
 
-    // 调用业务逻辑
-    const version = await createVersion(payload.userId, input);
+    const version = await createVersion(authUser.userId, input);
 
     const response: ApiResponse = {
       code: 200,

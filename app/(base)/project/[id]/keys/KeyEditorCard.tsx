@@ -1,26 +1,73 @@
 "use client"
 
+import { useState } from "react"
 import { Trash2, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { TranslationKey } from "./types"
 import { LANGUAGES } from "./types"
+import { apiFetch } from "@/lib/apiClient"
 
 export function KeyEditorCard({
   item,
   onUpdateValue,
+  onUpdateKey,
   onDelete,
 }: {
   item: TranslationKey
   onUpdateValue: (keyId: string, langCode: string, value: string) => void
+  onUpdateKey?: (keyId: string, newKey: string) => void
   onDelete: () => void
 }) {
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDelete = async () => {
+    setConfirmOpen(false)
+    setDeleting(true)
+    try {
+      const response = await apiFetch(`/api/keys/${item.id}`, {
+        method: "DELETE",
+      })
+      const data = await response.json()
+      if (data.code === 200) {
+        onDelete()
+      } else {
+        alert(data.msg || "删除失败")
+      }
+    } catch {
+      alert("网络错误，请稍后重试")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4 pb-4">
-        <CardTitle className="text-base font-medium">{item.key}</CardTitle>
+        {onUpdateKey ? (
+          <Input
+            value={item.key}
+            onChange={(e) => onUpdateKey(item.id, e.target.value)}
+            placeholder="翻译键名称，如 common.button.submit"
+            className="max-w-sm text-base font-medium"
+          />
+        ) : (
+          <CardTitle className="text-base font-medium">{item.key}</CardTitle>
+        )}
         <div className="flex shrink-0 items-center gap-2">
           <Button
             variant="outline"
@@ -34,7 +81,8 @@ export function KeyEditorCard({
             variant="ghost"
             size="icon"
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={onDelete}
+            onClick={() => setConfirmOpen(true)}
+            disabled={deleting}
             aria-label="删除翻译键"
           >
             <Trash2 className="size-4" />
@@ -59,6 +107,27 @@ export function KeyEditorCard({
           ))}
         </div>
       </CardContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>删除翻译键</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除「{item.key}」吗？此操作不可恢复。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">取消</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+                {deleting ? "删除中..." : "确定删除"}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }

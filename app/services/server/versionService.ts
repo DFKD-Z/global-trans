@@ -174,8 +174,17 @@ export async function deleteVersion(
     throw new Error("只有项目管理员可以删除版本");
   }
 
-  // 删除版本（级联删除会自动删除关联的 keys 和 values）
-  await db.version.delete({
-    where: { id: versionId },
+  // 因外键 ON DELETE RESTRICT，需先删除 TransValue、TransKey 再删除 Version
+  await db.$transaction(async (tx) => {
+    const keys = await tx.transKey.findMany({
+      where: { versionId },
+      select: { id: true },
+    });
+    const keyIds = keys.map((k) => k.id);
+    if (keyIds.length > 0) {
+      await tx.transValue.deleteMany({ where: { keyId: { in: keyIds } } });
+    }
+    await tx.transKey.deleteMany({ where: { versionId } });
+    await tx.version.delete({ where: { id: versionId } });
   });
 }
