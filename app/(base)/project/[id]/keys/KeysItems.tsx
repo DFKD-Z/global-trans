@@ -3,46 +3,15 @@
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
-import { ArrowLeft, Upload, Download, Plus, Save, InfoIcon } from "lucide-react"
+import { ArrowLeft, Upload, Download, Plus, Save } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert"
 import { KeyEditorCard } from "./KeyEditorCard"
 import { KeysEmpty } from "./KeysEmpty"
 import { CreateKeyForm } from "./CreateKeyForm"
 import { CreateKeyDialog } from "./CreateKeyDialog"
 import type { TranslationKey } from "./types"
 import { apiFetch } from "@/lib/apiClient"
-
-const SaveResultAlert = ({
-  saveResultType,
-  saveResultMessage,
-  onClose,
-}: {
-  saveResultType: "success" | "error"
-  saveResultMessage: string
-  onClose: () => void
-}) => {
-  return (
-    <Alert variant={saveResultType === "error" ? "destructive" : "default"} className="relative pr-10">
-      <InfoIcon />
-      <AlertTitle>{saveResultType === "success" ? "保存成功" : "保存失败"}</AlertTitle>
-      <AlertDescription>{saveResultMessage}</AlertDescription>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute right-2 top-2 size-6"
-        onClick={onClose}
-        aria-label="关闭"
-      >
-        ×
-      </Button>
-    </Alert>
-  )
-}
 
 export function KeysItems({ projectId }: { projectId: string }) {
   const searchParams = useSearchParams()
@@ -51,9 +20,6 @@ export function KeysItems({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true)
   const [createOpen, setCreateOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
-  const [saveResultOpen, setSaveResultOpen] = useState(false)
-  const [saveResultMessage, setSaveResultMessage] = useState("")
-  const [saveResultType, setSaveResultType] = useState<"success" | "error">("success")
   const isFetchingRef = useRef(false)
 
   const isEmpty = keys.length === 0
@@ -120,21 +86,15 @@ export function KeysItems({ projectId }: { projectId: string }) {
       const data = await response.json()
 
       if (data.code === 200) {
-        setSaveResultMessage("创建翻译键成功")
-        setSaveResultType("success")
-        setSaveResultOpen(true)
+        toast.success("创建翻译键成功")
         setNewKeyName("")
         setCreateOpen(false)
         fetchKeys()
       } else {
-        setSaveResultMessage(data.msg || "创建翻译键失败")
-        setSaveResultType("error")
-        setSaveResultOpen(true)
+        toast.error(data.msg || "创建翻译键失败")
       }
     } catch (err) {
-      setSaveResultMessage("网络错误，请稍后重试")
-      setSaveResultType("error")
-      setSaveResultOpen(true)
+      toast.error("网络错误，请稍后重试")
     }
   }
 
@@ -155,18 +115,12 @@ export function KeysItems({ projectId }: { projectId: string }) {
       })
       const data = await response.json()
       if (data.code === 200) {
-        setSaveResultMessage("保存成功")
-        setSaveResultType("success")
-        setSaveResultOpen(true)
+        toast.success("保存成功")
       } else {
-        setSaveResultMessage(data.msg || "保存失败")
-        setSaveResultType("error")
-        setSaveResultOpen(true)
+        toast.error(data.msg || "保存失败")
       }
     } catch (err) {
-      setSaveResultMessage("网络错误，请稍后重试")
-      setSaveResultType("error")
-      setSaveResultOpen(true)
+      toast.error("网络错误，请稍后重试")
     }
   }
 
@@ -208,15 +162,6 @@ export function KeysItems({ projectId }: { projectId: string }) {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      {saveResultOpen && (
-        <div className="fixed left-0 right-0 top-0 z-50 px-4 pt-4">
-          <SaveResultAlert
-            saveResultType={saveResultType}
-            saveResultMessage={saveResultMessage}
-            onClose={() => setSaveResultOpen(false)}
-          />
-        </div>
-      )}
       <div className="sticky top-0 z-10 border-b border-border bg-background">
         <div className="container mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <Link
