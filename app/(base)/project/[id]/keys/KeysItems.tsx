@@ -188,12 +188,6 @@ export function KeysItems({ projectId }: { projectId: string }) {
               <Plus className="size-4" />
               新建翻译键
             </Button>
-            <Button>
-              <Brain
-                className="size-4"
-              />
-              AI翻译
-            </Button>
           </div>
         </div>
       </div>
