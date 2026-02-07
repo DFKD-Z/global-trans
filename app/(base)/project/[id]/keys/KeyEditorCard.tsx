@@ -69,14 +69,7 @@ export function KeyEditorCard({
           <CardTitle className="text-base font-medium">{item.key}</CardTitle>
         )}
         <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 text-violet-600 hover:bg-violet-50 hover:text-violet-700 dark:hover:bg-violet-950/50"
-          >
-            <Sparkles className="size-4" />
-            AI翻译
-          </Button>
+         
           <Button
             variant="ghost"
             size="icon"
@@ -90,7 +83,7 @@ export function KeyEditorCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
           {LANGUAGES.map((lang) => (
             <div key={lang.code} className="space-y-2">
               <Label className="text-xs">

@@ -8,10 +8,10 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { KeyEditorCard } from "./KeyEditorCard"
 import { KeysEmpty } from "./KeysEmpty"
-import { CreateKeyForm } from "./CreateKeyForm"
 import { CreateKeyDialog } from "./CreateKeyDialog"
 import type { TranslationKey } from "./types"
 import { apiFetch } from "@/lib/apiClient"
+import { Brain } from "lucide-react"
 
 export function KeysItems({ projectId }: { projectId: string }) {
   const searchParams = useSearchParams()
@@ -188,6 +188,12 @@ export function KeysItems({ projectId }: { projectId: string }) {
               <Plus className="size-4" />
               新建翻译键
             </Button>
+            <Button>
+              <Brain
+                className="size-4"
+              />
+              AI翻译
+            </Button>
           </div>
         </div>
       </div>
@@ -200,8 +206,8 @@ export function KeysItems({ projectId }: { projectId: string }) {
           />
         )}
 
-        {!isEmpty && (
-          <div className="space-y-6">
+        {!isEmpty &&
+          <div className="space-y-2">
             {keys.map((item) => (
               <KeyEditorCard
                 key={item.id}
@@ -212,7 +218,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
               />
             ))}
           </div>
-        )}
+        }
       </div>
 
       <CreateKeyDialog
