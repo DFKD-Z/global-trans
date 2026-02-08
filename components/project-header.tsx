@@ -205,7 +205,7 @@ export function ProjectHeader() {
           aria-label="Home"
         >
           <span className="flex -skew-x-12 font-mono text-lg font-medium tracking-tight text-[#d4d4d8]">
-            {"//"}
+            {"Global Trans"}
           </span>
         </Link>
 
