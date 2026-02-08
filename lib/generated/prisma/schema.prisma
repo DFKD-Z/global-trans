@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. 用户与全局权限
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  password     String
+  isSuperAdmin Boolean         @default(false)
+  projects     ProjectMember[]
+  createdAt    DateTime        @default(now())
+}
+
+// 2. 项目主体
+model Project {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  languages   ProjectLanguage[] // 项目支持的语言列表
+  versions    Version[]
+  members     ProjectMember[]
+  createdAt   DateTime          @default(now())
+}
+
+// 3. 项目成员及角色 (RBAC 核心)
+model ProjectMember {
+  id        String  @id @default(cuid())
+  projectId String
+  userId    String
+  role      String // "manager" | "translator" | "viewer"
+  project   Project @relation(fields: [projectId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+}
+
+// 4. 项目语言配置
+model ProjectLanguage {
+  id        String  @id @default(cuid())
+  projectId String
+  code      String // e.g., "en-US", "zh-CN"
+  isSource  Boolean @default(false)
+  project   Project @relation(fields: [projectId], references: [id])
+}
+
+// 5. 版本管理
+model Version {
+  id        String     @id @default(cuid())
+  name      String // e.g., "v1.0.0"
+  projectId String
+  project   Project    @relation(fields: [projectId], references: [id])
+  keys      TransKey[]
+  createdAt DateTime   @default(now())
+}
+
+// 6. 翻译键 (Key)
+model TransKey {
+  id        String       @id @default(cuid())
+  name      String // e.g., "login.button.submit"
+  comment   String? // 提供给 AI 的上下文建议
+  versionId String
+  version   Version      @relation(fields: [versionId], references: [id])
+  values    TransValue[]
+
+  @@unique([versionId, name]) // 同一版本下 Key 唯一
+}
+
+// 7. 翻译值 (Value)
+model TransValue {
+  id             String   @id @default(cuid())
+  keyId          String
+  langCode       String
+  content        String   @db.Text
+  isAiTranslated Boolean  @default(false)
+  key            TransKey @relation(fields: [keyId], references: [id])
+
+  @@unique([keyId, langCode]) // 一个 Key 在一种语言下只有一个值
+}
+
+// 8. 平台支持的语言（国家/语言配置，供创建项目时选择）
+model PlatformLanguage {
+  id        String @id @default(cuid())
+  code      String @unique // e.g. "en-US", "zh-CN"
+  name      String // 显示名
+  sortOrder Int    @default(0)
+}
