@@ -33,9 +33,7 @@ export default function AdminPage() {
   }, []);
 
   return (
-    <div className="container mx-auto max-w-4xl py-8">
-      <h1 className="mb-6 text-2xl font-semibold">{LABEL_TITLE}</h1>
-
+    <div className="container mx-auto max-w-6xl py-8">
       <div className="mb-6 flex gap-2 border-b">
         {TABS.map(({ id, label, icon }) => (
           <button

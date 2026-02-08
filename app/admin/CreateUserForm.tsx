@@ -74,8 +74,8 @@ export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
       <CardHeader>
         <CardTitle>{LABEL_TITLE}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="grid gap-4 max-w-md">
+      <CardContent className="flex flex-col items-center justify-center">
+        <form onSubmit={handleSubmit} className="grid gap-4 w-full max-w-md">
           <div className="grid gap-2">
             <Label htmlFor="cu-email">{LABEL_EMAIL}</Label>
             <Input
