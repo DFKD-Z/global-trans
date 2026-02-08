@@ -11,6 +11,7 @@ import { KeysEmpty } from "./KeysEmpty"
 import { CreateKeyDialog } from "./CreateKeyDialog"
 import { ExportJsonDialog, buildNestedExportJson } from "./ExportJsonDialog"
 import { ImportJsonDialog } from "./ImportJsonDialog"
+import { AiTranslateDialog } from "./AiTranslateDialog"
 import type { TranslationKey } from "./types"
 import { getKeys, createKey, batchUpdateKeys } from "@/app/services/client"
 import { Brain } from "lucide-react"
@@ -24,6 +25,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
   const [newKeyName, setNewKeyName] = useState("")
   const [exportOpen, setExportOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [aiOpen, setAiOpen] = useState(false)
   const [exportPreviewData, setExportPreviewData] = useState<Record<
     string,
     Record<string, unknown>
@@ -125,6 +127,27 @@ export function KeysItems({ projectId }: { projectId: string }) {
     setExportOpen(true)
   }
 
+  /** 应用 AI 翻译：支持多语言格式，同一 key 下按 langCode 合并多条更新 */
+  const handleApplyAiTranslations = (
+    updates: Array<{ keyId: string; langCode: string; value: string }>
+  ) => {
+    setKeys((prev) =>
+      prev.map((k) => {
+        const keyUpdates = updates.filter((u) => u.keyId === k.id)
+        if (keyUpdates.length === 0) return k
+        const newValues = { ...k.values }
+        keyUpdates.forEach((u) => {
+          newValues[u.langCode] = u.value
+        })
+        return {
+          ...k,
+          values: newValues,
+        }
+      })
+    )
+    toast.success("翻译已应用，请保存以写入服务端")
+  }
+
   if (!versionId) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center">
@@ -180,6 +203,10 @@ export function KeysItems({ projectId }: { projectId: string }) {
               <Plus className="size-4" />
               新建翻译键
             </Button>
+            <Button size="sm" className="gap-2" onClick={() => setAiOpen(true)}>
+              <Brain className="size-4" />
+              一键翻译
+            </Button>
           </div>
         </div>
       </div>
@@ -225,6 +252,12 @@ export function KeysItems({ projectId }: { projectId: string }) {
         versionId={versionId}
         currentKeys={keys}
         onImportSuccess={fetchKeys}
+      />
+      <AiTranslateDialog
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        keys={keys}
+        onApplyTranslations={handleApplyAiTranslations}
       />
     </div>
   )

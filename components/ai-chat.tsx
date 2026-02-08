@@ -34,7 +34,7 @@ export function AiChat() {
 
   useEffect(() => {
     if (open && messages.length) scrollToBottom()
-  }, [open, messages.length, scrollToBottom])
+  }, [open, messages, scrollToBottom])
 
   const handleSend = useCallback(async () => {
     const text = input.trim()
@@ -51,15 +51,63 @@ export function AiChat() {
     setSending(true)
 
     try {
-      // 占位：后续可替换为 /api/chat 等真实 AI 接口
-      await new Promise((r) => setTimeout(r, 600))
-      const assistantMsg: ChatMessage = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: "收到，这是演示回复。接入真实 AI 后此处可替换为流式响应。",
-        createdAt: new Date(),
+      const response = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text }),
+      })
+
+      if (!response.ok) {
+        let errMsg = "回复失败，请稍后重试"
+        try {
+          const errBody = await response.json()
+          if (typeof errBody?.error === "string") errMsg = errBody.error
+        } catch {
+          // 忽略 JSON 解析失败
+        }
+        throw new Error(errMsg)
       }
-      setMessages((prev) => [...prev, assistantMsg])
+
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error("无法读取响应内容")
+      }
+      const decoder = new TextDecoder()
+      const assistantId = `assistant-${Date.now()}`
+      let content = ""
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        content += decoder.decode(value, { stream: true })
+        setMessages((prev) => {
+          const hasAssistant = prev.some((m) => m.id === assistantId)
+          if (!hasAssistant) {
+            return [
+              ...prev,
+              {
+                id: assistantId,
+                role: "assistant",
+                content,
+                createdAt: new Date(),
+              },
+            ]
+          }
+          return prev.map((m) =>
+            m.id === assistantId ? { ...m, content } : m
+          )
+        })
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "回复失败，请稍后重试。"
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `assistant-error-${Date.now()}`,
+          role: "assistant",
+          content: errMsg,
+          createdAt: new Date(),
+        },
+      ])
     } finally {
       setSending(false)
     }
@@ -131,7 +179,8 @@ export function AiChat() {
                     </div>
                   </li>
                 ))}
-                {sending && (
+                {sending &&
+                  messages[messages.length - 1]?.role === "user" && (
                   <li className="flex justify-start">
                     <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-2.5 text-sm text-muted-foreground">
                       <Loader2 className="size-4 animate-spin" />
