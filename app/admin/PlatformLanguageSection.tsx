@@ -118,12 +118,10 @@ export function PlatformLanguageSection() {
         await updatePlatformLanguage(editingId, form);
         setDialogOpen(false);
         fetchList();
-        // showResult("更新成功", "平台语言已更新。");
       } else {
         await createPlatformLanguage(form);
         setDialogOpen(false);
         fetchList();
-        // showResult("创建成功", "平台语言已添加。");
       }
     } catch (e) {
       showResult("操作失败", e instanceof Error ? e.message : "操作失败");
