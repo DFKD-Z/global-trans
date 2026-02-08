@@ -89,3 +89,11 @@ model TransValue {
 
   @@unique([keyId, langCode]) // 一个 Key 在一种语言下只有一个值
 }
+
+// 8. 平台支持的语言（国家/语言配置，供创建项目时选择）
+model PlatformLanguage {
+  id        String @id @default(cuid())
+  code      String @unique // e.g. "en-US", "zh-CN"
+  name      String // 显示名
+  sortOrder Int    @default(0)
+}

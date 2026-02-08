@@ -9,6 +9,8 @@ import type {
   LoginInput,
   AuthResponse,
   UserResponse,
+  CreateUserByAdminInput,
+  UpdateUserRoleInput,
 } from "./types";
 
 /**
@@ -153,5 +155,85 @@ export async function getCurrentUser(userId: string): Promise<UserResponse> {
     throw new Error("用户不存在");
   }
 
+  return user;
+}
+
+/**
+ * 列出所有用户（仅超级管理员）
+ * @returns 用户列表，不含密码
+ */
+export async function listUsers(): Promise<UserResponse[]> {
+  const users = await db.user.findMany({
+    select: {
+      id: true,
+      email: true,
+      isSuperAdmin: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return users;
+}
+
+/**
+ * 更新用户平台角色（仅超级管理员）
+ * @param userId 用户 ID
+ * @param input 角色字段
+ */
+export async function updateUserRole(
+  userId: string,
+  input: UpdateUserRoleInput
+): Promise<UserResponse> {
+  const user = await db.user.update({
+    where: { id: userId },
+    data: { isSuperAdmin: input.isSuperAdmin },
+    select: {
+      id: true,
+      email: true,
+      isSuperAdmin: true,
+      createdAt: true,
+    },
+  });
+  return user;
+}
+
+/**
+ * 管理员创建用户（不生成 token，不写 cookie）
+ * @param input 邮箱、密码、可选 isSuperAdmin
+ * @returns 创建的用户信息
+ */
+export async function createUserByAdmin(
+  input: CreateUserByAdminInput
+): Promise<UserResponse> {
+  const { email, password, isSuperAdmin = false } = input;
+
+  if (!isValidEmail(email)) {
+    throw new Error("邮箱格式不正确");
+  }
+  if (!isValidPassword(password)) {
+    throw new Error("密码长度至少为 8 个字符");
+  }
+
+  const existingUser = await db.user.findUnique({
+    where: { email },
+  });
+  if (existingUser) {
+    throw new Error("该邮箱已被注册");
+  }
+
+  const hashedPassword = await hashPassword(password);
+  const user = await db.user.create({
+    data: {
+      email,
+      password: hashedPassword,
+      isSuperAdmin,
+    },
+    select: {
+      id: true,
+      email: true,
+      isSuperAdmin: true,
+      createdAt: true,
+    },
+  });
   return user;
 }

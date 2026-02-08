@@ -39,3 +39,19 @@ export interface AuthResponse {
   user: UserResponse;
   token: string;
 }
+
+/**
+ * 管理员创建用户输入（POST /api/admin/users）
+ */
+export interface CreateUserByAdminInput {
+  email: string;
+  password: string;
+  isSuperAdmin?: boolean;
+}
+
+/**
+ * 管理员更新用户角色输入（PATCH /api/admin/users/[id]）
+ */
+export interface UpdateUserRoleInput {
+  isSuperAdmin: boolean;
+}

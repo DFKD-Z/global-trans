@@ -8,6 +8,7 @@ import {
   FolderCode,
   GitBranch,
   KeyRound,
+  Settings,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -187,8 +188,7 @@ const SearchCommand = ({ children }: { children: React.ReactNode }) => {
 }
 
 export function ProjectHeader() {
-
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   return (
     <header
       className={cn(
@@ -255,6 +255,14 @@ export function ProjectHeader() {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" align="start">
+            {user?.isSuperAdmin && (
+              <DropdownMenuItem asChild>
+                <Link href="/admin" className="flex items-center gap-2">
+                  <Settings className="size-4" />
+                  管理后台
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem>
               <div onClick={logout} className="flex items-center gap-2">
                 <User className="size-4" />

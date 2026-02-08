@@ -22,7 +22,7 @@ const PUBLIC_API_PREFIXES = [
 ];
 
 /** 需要保护的页面路径 */
-const PROTECTED_PAGE_PATHS = ["/", "/project"];
+const PROTECTED_PAGE_PATHS = ["/", "/project", "/admin"];
 
 /** 公开页面路径（不需要认证） */
 const PUBLIC_PAGE_PATHS = ["/login", "/signup"];
