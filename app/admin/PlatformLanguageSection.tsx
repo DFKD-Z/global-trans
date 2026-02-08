@@ -48,7 +48,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function PlatformLanguageSection() {
   const [list, setList] = useState<PlatformLanguageItem[]>([]);
@@ -60,6 +69,16 @@ export function PlatformLanguageSection() {
     name: "",
     sortOrder: 0,
   });
+  const [langToDelete, setLangToDelete] = useState<PlatformLanguageItem | null>(null);
+  const [resultDialog, setResultDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+  }>({ open: false, title: "", description: "" });
+
+  const showResult = useCallback((title: string, description: string) => {
+    setResultDialog({ open: true, title, description });
+  }, []);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -67,11 +86,11 @@ export function PlatformLanguageSection() {
       const data = await getPlatformLanguages();
       setList(data);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "加载失败");
+      showResult("加载失败", e instanceof Error ? e.message : "加载失败");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showResult]);
 
   useEffect(() => {
     fetchList();
@@ -97,26 +116,32 @@ export function PlatformLanguageSection() {
     try {
       if (editingId) {
         await updatePlatformLanguage(editingId, form);
-        toast.success("更新成功");
+        setDialogOpen(false);
+        fetchList();
+        showResult("更新成功", "平台语言已更新。");
       } else {
         await createPlatformLanguage(form);
-        toast.success("创建成功");
+        setDialogOpen(false);
+        fetchList();
+        showResult("创建成功", "平台语言已添加。");
       }
-      setDialogOpen(false);
-      fetchList();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "操作失败");
+      showResult("操作失败", e instanceof Error ? e.message : "操作失败");
     }
   };
 
-  const handleDelete = async (id: string, code: string) => {
-    if (!confirm(`确定删除语言「${code}」吗？`)) return;
+  const handleDeleteClick = (row: PlatformLanguageItem) => setLangToDelete(row);
+
+  const handleDeleteConfirm = async () => {
+    if (!langToDelete) return;
+    const { id, code } = langToDelete;
+    setLangToDelete(null);
     try {
       await deletePlatformLanguage(id);
-      toast.success("删除成功");
       fetchList();
+      showResult("删除成功", `语言「${code}」已删除。`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "删除失败");
+      showResult("删除失败", e instanceof Error ? e.message : "删除失败");
     }
   };
 
@@ -165,7 +190,7 @@ export function PlatformLanguageSection() {
                         variant="ghost"
                         size="icon"
                         className="size-8 text-destructive"
-                        onClick={() => handleDelete(row.id, row.code)}
+                        onClick={() => handleDeleteClick(row)}
                         aria-label={LABEL_DELETE}
                       >
                         <Trash2 className="size-4" />
@@ -224,6 +249,44 @@ export function PlatformLanguageSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 删除确认 */}
+      <AlertDialog open={!!langToDelete} onOpenChange={(open) => !open && setLangToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{LABEL_DELETE}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {langToDelete
+                ? `确定删除语言「${langToDelete.code}」吗？此操作不可恢复。`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleDeleteConfirm}>
+                删除
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 操作结果提示 */}
+      <AlertDialog
+        open={resultDialog.open}
+        onOpenChange={(open) => setResultDialog((r) => ({ ...r, open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{resultDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>{resultDialog.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>确定</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

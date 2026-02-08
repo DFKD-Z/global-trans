@@ -237,3 +237,16 @@ export async function createUserByAdmin(
   });
   return user;
 }
+
+/**
+ * 管理员删除用户（仅超级管理员）
+ * 会先删除该用户在所有项目中的成员记录，再删除用户
+ * @param userId 要删除的用户 ID
+ * @throws 用户不存在或无法删除
+ */
+export async function deleteUserByAdmin(userId: string): Promise<void> {
+  await db.$transaction(async (tx) => {
+    await tx.projectMember.deleteMany({ where: { userId } });
+    await tx.user.delete({ where: { id: userId } });
+  });
+}

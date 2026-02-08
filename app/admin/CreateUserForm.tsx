@@ -18,7 +18,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface CreateUserFormProps {
   onSuccess?: () => void;
@@ -29,24 +37,33 @@ export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
   const [password, setPassword] = useState("");
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [resultDialog, setResultDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+  }>({ open: false, title: "", description: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      toast.error("请填写邮箱和密码");
+      setResultDialog({ open: true, title: "提示", description: "请填写邮箱和密码。" });
       return;
     }
     setSubmitting(true);
     try {
       const input: CreateUserInput = { email: email.trim(), password, isSuperAdmin };
       await createUser(input);
-      toast.success("用户创建成功");
       setEmail("");
       setPassword("");
       setIsSuperAdmin(false);
       onSuccess?.();
+      setResultDialog({ open: true, title: "创建成功", description: "用户已创建。" });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "创建失败");
+      setResultDialog({
+        open: true,
+        title: "创建失败",
+        description: e instanceof Error ? e.message : "创建失败",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -97,6 +114,22 @@ export function CreateUserForm({ onSuccess }: CreateUserFormProps) {
           </Button>
         </form>
       </CardContent>
+
+      {/* 操作结果提示 */}
+      <AlertDialog
+        open={resultDialog.open}
+        onOpenChange={(open) => setResultDialog((r) => ({ ...r, open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{resultDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription>{resultDialog.description}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>确定</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

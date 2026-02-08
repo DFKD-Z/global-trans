@@ -11,9 +11,9 @@ const TAB_CREATE_USER = "创建用户";
 
 import React, { useState, useCallback } from "react";
 import { Globe, UserPlus, Users } from "lucide-react";
-import { PlatformLanguageSection } from "@/components/features/admin/PlatformLanguageSection";
-import { UserRoleSection } from "@/components/features/admin/UserRoleSection";
-import { CreateUserForm } from "@/components/features/admin/CreateUserForm";
+import { PlatformLanguageSection } from "@/app/admin/PlatformLanguageSection";
+import { UserRoleSection } from "@/app/admin/UserRoleSection";
+import { CreateUserForm } from "@/app/admin/CreateUserForm";
 import { cn } from "@/lib/utils";
 
 type TabId = "languages" | "roles" | "create";

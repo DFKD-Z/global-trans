@@ -103,3 +103,9 @@ export async function updateUserRole(
   if (json.code === 200 && json.data) return json.data;
   throw new Error(json.msg ?? "更新角色失败");
 }
+
+export async function deleteUser(userId: string): Promise<void> {
+  const res = await apiFetch(`/api/admin/users/${userId}`, { method: "DELETE" });
+  const json = (await res.json()) as ApiResponse;
+  if (json.code !== 200) throw new Error(json.msg ?? "删除失败");
+}
