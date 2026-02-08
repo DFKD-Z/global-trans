@@ -33,7 +33,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
-          <AiChat />
+          {/* <AiChat /> */}
         </AuthProvider>
       </body>
     </html>
