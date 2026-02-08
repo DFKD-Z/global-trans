@@ -13,14 +13,17 @@ import { ExportJsonDialog, buildNestedExportJson } from "./ExportJsonDialog"
 import { ImportJsonDialog } from "./ImportJsonDialog"
 import { AiTranslateDialog } from "./AiTranslateDialog"
 import type { TranslationKey } from "./types"
-import { getKeys, createKey, batchUpdateKeys } from "@/app/services/client"
+import { getKeys, createKey, batchUpdateKeys, getProject, getPlatformLanguages } from "@/app/services/client"
 import { Brain } from "lucide-react"
+
+export type ProjectLanguageOption = { code: string; name: string }
 
 export function KeysItems({ projectId }: { projectId: string }) {
   const searchParams = useSearchParams()
   const versionId = searchParams.get("versionId")
   const [keys, setKeys] = useState<TranslationKey[]>([])
   const [loading, setLoading] = useState(true)
+  const [projectLanguages, setProjectLanguages] = useState<ProjectLanguageOption[]>([])
   const [createOpen, setCreateOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")
   const [exportOpen, setExportOpen] = useState(false)
@@ -65,9 +68,34 @@ export function KeysItems({ projectId }: { projectId: string }) {
   }
 
   useEffect(() => {
+    if (!versionId) return
     fetchKeys()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [versionId])
+
+  // 项目语言 + 平台名称，用于 Key 编辑列与一键翻译选项
+  useEffect(() => {
+    if (!projectId || !versionId) return
+    let cancelled = false
+    const run = async () => {
+      try {
+        const [project, platformList] = await Promise.all([
+          getProject(projectId),
+          getPlatformLanguages(),
+        ])
+        if (cancelled) return
+        const nameByCode = Object.fromEntries(platformList.map((p) => [p.code, p.name]))
+        const sorted = [...project.languages].sort((a, b) => (a.isSource === b.isSource ? 0 : a.isSource ? -1 : 1))
+        setProjectLanguages(
+          sorted.map((pl) => ({ code: pl.code, name: nameByCode[pl.code] ?? pl.code }))
+        )
+      } catch {
+        if (!cancelled) setProjectLanguages([])
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [projectId, versionId])
 
   const handleCreateKey = async () => {
     if (!newKeyName.trim() || !versionId) return
@@ -219,19 +247,20 @@ export function KeysItems({ projectId }: { projectId: string }) {
           />
         )}
 
-        {!isEmpty &&
+        {!isEmpty && projectLanguages.length > 0 && (
           <div className="space-y-2">
             {keys.map((item) => (
               <KeyEditorCard
                 key={item.id}
                 item={item}
+                languages={projectLanguages}
                 onUpdateValue={handleUpdateValue}
                 onUpdateKey={handleUpdateKey}
                 onDelete={() => handleDeleteKey(item.id)}
               />
             ))}
           </div>
-        }
+        )}
       </div>
 
       <CreateKeyDialog
@@ -257,6 +286,7 @@ export function KeysItems({ projectId }: { projectId: string }) {
         open={aiOpen}
         onOpenChange={setAiOpen}
         keys={keys}
+        languages={projectLanguages}
         onApplyTranslations={handleApplyAiTranslations}
       />
     </div>

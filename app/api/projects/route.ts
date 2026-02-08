@@ -18,7 +18,7 @@ const createProjectSchema = z.object({
   name: z.string().min(1, "项目名称不能为空").max(100, "项目名称长度不能超过 100 个字符"),
   description: z.string().max(500, "项目描述长度不能超过 500 个字符").optional(),
   languages: z
-    .array(z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, "语言代码格式不正确"))
+    .array(z.string().min(1, "语言代码不能为空").max(20, "语言代码过长"))
     .min(1, "至少需要选择一个语言"),
 });
 
@@ -77,9 +77,10 @@ export async function POST(request: NextRequest) {
     const validationResult = createProjectSchema.safeParse(body);
 
     if (!validationResult.success) {
+      const firstIssue = validationResult.error.issues[0];
       const response: ApiResponse = {
         code: 400,
-        msg: validationResult.error.errors[0]?.message || "输入验证失败",
+        msg: firstIssue?.message ?? "输入验证失败",
       };
       return NextResponse.json(response, { status: 400 });
     }

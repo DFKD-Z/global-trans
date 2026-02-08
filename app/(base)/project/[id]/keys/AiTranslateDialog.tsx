@@ -28,7 +28,6 @@ import {
 import { ChevronDownIcon } from "lucide-react"
 import { apiFetch } from "@/lib/apiClient"
 import type { TranslationKey } from "./types"
-import { LANGUAGES } from "./types"
 
 /** 从 keys 中收集所有出现过的语言码 */
 function getLangCodesFromKeys(keys: TranslationKey[]): string[] {
@@ -101,11 +100,13 @@ export function AiTranslateDialog({
   open,
   onOpenChange,
   keys,
+  languages,
   onApplyTranslations,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   keys: TranslationKey[]
+  languages: Array<{ code: string; name: string }>
   onApplyTranslations: (updates: Array<{ keyId: string; langCode: string; value: string }>) => void
 }) {
   const [sourceLang, setSourceLang] = useState("zh-CN")
@@ -115,13 +116,13 @@ export function AiTranslateDialog({
 
   const langCodes = useMemo(() => getLangCodesFromKeys(keys), [keys])
   const langOptions = useMemo(
-    () => LANGUAGES.filter((l) => langCodes.includes(l.code)),
-    [langCodes]
+    () => languages.filter((l) => langCodes.includes(l.code)),
+    [languages, langCodes]
   )
-  // 目标语言：除源语言外的所有支持语言
+  // 目标语言：除源语言外的所有项目语言
   const targetOptions = useMemo(
-    () => LANGUAGES.filter((l) => l.code !== sourceLang),
-    [sourceLang]
+    () => languages.filter((l) => l.code !== sourceLang),
+    [languages, sourceLang]
   )
 
   const effectiveSourceLang = langOptions.some((l) => l.code === sourceLang)
@@ -257,7 +258,7 @@ export function AiTranslateDialog({
                     {effectiveTargetLangs.length === 0
                       ? "请选择目标语言"
                       : effectiveTargetLangs.length === 1
-                        ? LANGUAGES.find((l) => l.code === effectiveTargetLangs[0])?.name ?? effectiveTargetLangs[0]
+                        ? languages.find((l) => l.code === effectiveTargetLangs[0])?.name ?? effectiveTargetLangs[0]
                         : `已选 ${effectiveTargetLangs.length} 种语言`}
                   </span>
                   <ChevronDownIcon className="size-4 opacity-50" />

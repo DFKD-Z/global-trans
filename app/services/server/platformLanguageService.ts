@@ -64,6 +64,18 @@ export async function updatePlatformLanguage(
   };
 }
 
+/**
+ * 删除平台语言并级联：删除所有使用该语言的 TransValue、ProjectLanguage，再删除平台语言
+ */
 export async function deletePlatformLanguage(id: string): Promise<void> {
-  await db.platformLanguage.delete({ where: { id } });
+  const row = await db.platformLanguage.findUnique({ where: { id } });
+  if (!row) throw new Error("平台语言不存在");
+
+  const code = row.code;
+
+  await db.$transaction(async (tx) => {
+    await tx.transValue.deleteMany({ where: { langCode: code } });
+    await tx.projectLanguage.deleteMany({ where: { code } });
+    await tx.platformLanguage.delete({ where: { id } });
+  });
 }

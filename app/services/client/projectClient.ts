@@ -19,6 +19,22 @@ export interface CreateProjectInput {
   languages: string[];
 }
 
+/** 平台语言项（与 GET /api/platform-languages 返回一致，供创建项目、Keys 页使用） */
+export interface PlatformLanguageItem {
+  id: string;
+  code: string;
+  name: string;
+  sortOrder: number;
+}
+
+/** 获取平台语言列表（已登录可访问，供创建项目与 Keys 页语言选项） */
+export async function getPlatformLanguages(): Promise<PlatformLanguageItem[]> {
+  const res = await apiFetch("/api/platform-languages");
+  const json = (await res.json()) as ApiResponse<PlatformLanguageItem[]>;
+  if (json.code === 200 && json.data) return json.data;
+  throw new Error(json.msg || "获取平台语言列表失败");
+}
+
 /** 获取项目列表 */
 export async function getProjects(): Promise<ProjectItem[]> {
   const res = await apiFetch("/api/projects");

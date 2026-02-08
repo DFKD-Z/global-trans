@@ -18,16 +18,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import type { TranslationKey } from "./types"
-import { LANGUAGES } from "./types"
 import { deleteKey } from "@/app/services/client"
 
 export function KeyEditorCard({
   item,
+  languages,
   onUpdateValue,
   onUpdateKey,
   onDelete,
 }: {
   item: TranslationKey
+  languages: Array<{ code: string; name: string }>
   onUpdateValue: (keyId: string, langCode: string, value: string) => void
   onUpdateKey?: (keyId: string, newKey: string) => void
   onDelete: () => void
@@ -77,7 +78,7 @@ export function KeyEditorCard({
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
-          {LANGUAGES.map((lang) => (
+          {languages.map((lang) => (
             <div key={lang.code} className="space-y-2">
               <Label className="text-xs">
                 {lang.name} ({lang.code})

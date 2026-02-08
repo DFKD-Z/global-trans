@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const parsed = createUserSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { code: 400, msg: parsed.error.errors[0]?.message ?? "参数错误" } satisfies ApiResponse,
+        { code: 400, msg: parsed.error.issues[0]?.message ?? "参数错误" } satisfies ApiResponse,
         { status: 400 }
       );
     }

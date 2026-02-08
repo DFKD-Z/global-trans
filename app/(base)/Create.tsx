@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,30 +17,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { createProject } from "@/app/services/client"
-
-const LANGUAGES = [
-    {
-        label: '简体中文',
-        value: 'zh-CN',
-    },
-    {
-        label: 'English (US)',
-        value: 'en-US',
-    },
-    {
-        label: 'English (GB)',
-        value: 'en-GB',
-    },
-    {
-        label: '日本語',
-        value: 'ja-JP',
-    },
-    {
-        label: '한국어',
-        value: 'ko-KR',
-    },
-]
+import { createProject, getPlatformLanguages } from "@/app/services/client"
+import type { PlatformLanguageItem } from "@/app/services/client/projectClient"
 
 type CreateDialogProps = {
   children: React.ReactNode
@@ -52,9 +30,27 @@ export function CreateDialog({ children, onSuccess }: CreateDialogProps) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([])
+  const [platformLanguages, setPlatformLanguages] = useState<PlatformLanguageItem[]>([])
+  const [langsLoading, setLangsLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+
+  const fetchPlatformLanguages = useCallback(async () => {
+    setLangsLoading(true)
+    try {
+      const list = await getPlatformLanguages()
+      setPlatformLanguages(list)
+    } catch {
+      setPlatformLanguages([])
+    } finally {
+      setLangsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (open) fetchPlatformLanguages()
+  }, [open, fetchPlatformLanguages])
 
   const handleLanguageChange = (langCode: string, checked: boolean) => {
     if (checked) {
@@ -135,22 +131,28 @@ export function CreateDialog({ children, onSuccess }: CreateDialogProps) {
             </div>
             <div className="grid gap-3">
               <Label>支持的语言</Label>
-              <div className="flex flex-wrap gap-4">
-                {LANGUAGES.map((lang) => (
-                  <div key={lang.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={lang.value}
-                      checked={selectedLanguages.includes(lang.value)}
-                      onCheckedChange={(checked) =>
-                        handleLanguageChange(lang.value, checked === true)
-                      }
-                    />
-                    <Label htmlFor={lang.value} className="cursor-pointer">
-                      {lang.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
+              {langsLoading ? (
+                <p className="text-muted-foreground text-sm">加载语言列表...</p>
+              ) : platformLanguages.length === 0 ? (
+                <p className="text-muted-foreground text-sm">暂无平台语言，请先在管理后台配置。</p>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  {platformLanguages.map((lang) => (
+                    <div key={lang.code} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={lang.code}
+                        checked={selectedLanguages.includes(lang.code)}
+                        onCheckedChange={(checked) =>
+                          handleLanguageChange(lang.code, checked === true)
+                        }
+                      />
+                      <Label htmlFor={lang.code} className="cursor-pointer">
+                        {lang.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             {error && (
               <div className="text-sm text-destructive">{error}</div>

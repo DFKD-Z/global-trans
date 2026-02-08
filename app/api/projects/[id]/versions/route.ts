@@ -88,9 +88,10 @@ export async function POST(
     const validationResult = createVersionSchema.safeParse(body);
 
     if (!validationResult.success) {
+      const firstIssue = validationResult.error.issues[0];
       const response: ApiResponse = {
         code: 400,
-        msg: validationResult.error.errors[0]?.message || "输入验证失败",
+        msg: firstIssue?.message ?? "输入验证失败",
       };
       return NextResponse.json(response, { status: 400 });
     }

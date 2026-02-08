@@ -55,12 +55,25 @@ export async function createProject(
     throw new Error("至少需要选择一个语言");
   }
 
-  // 验证语言代码格式（简单验证）
-  const validLangPattern = /^[a-z]{2}(-[A-Z]{2})?$/;
+  // 验证语言代码非空且长度合理
   for (const lang of languages) {
-    if (!validLangPattern.test(lang)) {
-      throw new Error(`语言代码格式不正确: ${lang}`);
+    if (!lang || typeof lang !== "string" || lang.trim().length === 0) {
+      throw new Error("语言代码不能为空");
     }
+    if (lang.length > 20) {
+      throw new Error(`语言代码过长: ${lang}`);
+    }
+  }
+
+  // 校验所有语言均在平台配置中存在
+  const platformLangs = await db.platformLanguage.findMany({
+    where: { code: { in: languages } },
+    select: { code: true },
+  });
+  const existingCodes = new Set(platformLangs.map((p) => p.code));
+  const missing = languages.filter((c) => !existingCodes.has(c));
+  if (missing.length > 0) {
+    throw new Error(`以下语言未在平台中配置：${missing.join("、")}`);
   }
 
   // 使用事务创建项目和项目成员
