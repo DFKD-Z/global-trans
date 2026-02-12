@@ -1,0 +1,105 @@
+"use client"
+
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
+
+/**
+ * 用户信息类型
+ */
+export interface User {
+  id: string;
+  email: string;
+  isSuperAdmin: boolean;
+  createdAt: string;
+}
+
+/**
+ * 认证上下文类型
+ */
+type AuthContextType = {
+  user: User | null;
+  loading: boolean;
+  login: (user: User) => void;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  /**
+   * 检查认证状态
+   */
+  const checkAuth = useCallback(async () => {
+    try {
+      // 使用原生 fetch：401 时仅表示未登录，由 AuthGuard 负责跳转
+      const response = await fetch("/api/auth/me", { credentials: "include" });
+      const data = await response.json();
+
+      if (data.code === 200 && data.data) {
+        setUser(data.data);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error("检查认证状态失败:", error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * 登录
+   */
+  const login = useCallback((userData: User) => {
+    setUser(userData);
+    setLoading(false);
+  }, []);
+
+  /**
+   * 登出
+   */
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+      setUser(null);
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("登出失败:", error);
+    }
+  }, [router]);
+
+  // 组件挂载时检查认证状态
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // 使用 useMemo 缓存 value 对象，避免不必要的重新渲染
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      login,
+      logout,
+      checkAuth,
+    }),
+    [user, loading, login, logout, checkAuth]
+  );
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+};
